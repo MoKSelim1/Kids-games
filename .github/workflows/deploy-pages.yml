@@ -1,14 +1,15 @@
 name: Deploy to GitHub Pages
 
+# GitHub Pages serves this repo from the gh-pages branch; this workflow
+# keeps gh-pages in sync with main so every merge goes live automatically.
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -17,20 +18,10 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
         with:
-          enablement: true
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+          fetch-depth: 0
+      - name: Publish main to gh-pages
+        run: git push origin HEAD:gh-pages --force
