@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0511">
+<title>Vampire Pac-Man 🦇</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: radial-gradient(ellipse at 50% 0%, #1d0b2e 0%, #0b0511 60%, #060309 100%);
+    color: #e8dff5;
+    font-family: Georgia, 'Times New Roman', serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  header {
+    width: 100%;
+    max-width: 560px;
+    padding: 6px 12px 2px;
+    text-align: center;
+  }
+  h1 {
+    font-size: clamp(18px, 5vw, 26px);
+    letter-spacing: 3px;
+    color: #ff2d4e;
+    text-shadow: 0 0 12px rgba(255, 45, 78, 0.7), 0 0 30px rgba(140, 0, 40, 0.5);
+    font-variant: small-caps;
+  }
+  #hud {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 14px;
+    font-size: clamp(12px, 3.4vw, 16px);
+  }
+  #hud .label { color: #8e7bb0; font-size: 0.78em; display: block; letter-spacing: 1px; }
+  #hud .val { color: #ffd9e0; text-shadow: 0 0 8px rgba(255, 45, 78, 0.5); }
+  #lives { font-size: 1.1em; letter-spacing: 2px; min-width: 60px; text-align: right; }
+  #mute {
+    background: none; border: 1px solid #4a3566; color: #c9b8e8;
+    border-radius: 8px; padding: 3px 8px; font-size: 14px; cursor: pointer;
+  }
+  #game-wrap {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 560px;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 2px 4px;
+  }
+  canvas {
+    display: block;
+    border-radius: 8px;
+    box-shadow: 0 0 24px rgba(120, 20, 60, 0.45), inset 0 0 60px rgba(0,0,0,0.6);
+    touch-action: none;
+  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: rgba(8, 3, 14, 0.78);
+    backdrop-filter: blur(2px);
+    border-radius: 8px;
+    padding: 20px;
+    z-index: 5;
+  }
+  #overlay.hidden { display: none; }
+  #overlay h2 {
+    font-size: clamp(26px, 8vw, 44px);
+    color: #ff2d4e;
+    text-shadow: 0 0 16px rgba(255, 45, 78, 0.8);
+    font-variant: small-caps;
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+  }
+  #overlay p { color: #c9b8e8; font-size: clamp(13px, 3.8vw, 17px); line-height: 1.55; margin-bottom: 18px; }
+  #overlay .bats { font-size: 30px; margin-bottom: 8px; animation: flap 1.6s ease-in-out infinite; }
+  @keyframes flap { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  #play-btn {
+    font-family: inherit;
+    font-variant: small-caps;
+    letter-spacing: 2px;
+    font-size: clamp(17px, 5vw, 22px);
+    color: #fff;
+    background: linear-gradient(180deg, #b3123a, #6d0822);
+    border: 1px solid #ff5b78;
+    border-radius: 14px;
+    padding: 12px 36px;
+    cursor: pointer;
+    box-shadow: 0 0 18px rgba(255, 45, 78, 0.5);
+  }
+  #play-btn:active { transform: scale(0.96); }
+  #dpad {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, clamp(54px, 16vw, 76px));
+    grid-template-rows: repeat(2, clamp(42px, 12vw, 58px));
+    gap: 6px;
+    padding: 6px 0 10px;
+    touch-action: none;
+  }
+  .dbtn {
+    background: rgba(80, 40, 110, 0.28);
+    border: 1px solid #4a3566;
+    border-radius: 12px;
+    color: #d8c8f0;
+    font-size: clamp(18px, 5vw, 24px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .dbtn:active { background: rgba(180, 40, 80, 0.45); border-color: #ff5b78; }
+  #btn-up { grid-column: 2; grid-row: 1; }
+  #btn-left { grid-column: 1; grid-row: 2; }
+  #btn-down { grid-column: 2; grid-row: 2; }
+  #btn-right { grid-column: 3; grid-row: 2; }
+  #hint { font-size: 11px; color: #6f5d8f; text-align: center; padding-bottom: 4px; }
+</style>
+</head>
+<body>
+  <header><h1>🦇 Vampire Pac-Man 🦇</h1></header>
+  <div id="hud">
+    <div><span class="label">Score</span><span class="val" id="score">0</span></div>
+    <div><span class="label">Best</span><span class="val" id="best">0</span></div>
+    <div><span class="label">Night</span><span class="val" id="level">1</span></div>
+    <button id="mute" aria-label="Toggle sound">🔊</button>
+    <div id="lives">🦇🦇🦇</div>
+  </div>
+  <div id="game-wrap">
+    <canvas id="game"></canvas>
+    <div id="overlay">
+      <div class="bats">🦇 🧛 🦇</div>
+      <h2>Vampire Pac-Man</h2>
+      <p id="overlay-text">Drink all the blood drops, but beware the vampire hunters!<br>
+      Grab a glowing blood vial to turn the tables and bite them back.<br>
+      Swipe, use the arrows below, or arrow keys to fly.</p>
+      <button id="play-btn">Rise from the Coffin</button>
+    </div>
+  </div>
+  <div id="dpad">
+    <button class="dbtn" id="btn-up" aria-label="Up">▲</button>
+    <button class="dbtn" id="btn-left" aria-label="Left">◀</button>
+    <button class="dbtn" id="btn-down" aria-label="Down">▼</button>
+    <button class="dbtn" id="btn-right" aria-label="Right">▶</button>
+  </div>
+  <div id="hint">swipe on the maze or use the arrows</div>
+  <script src="game.js"></script>
+</body>
+</html>
